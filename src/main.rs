@@ -1,5 +1,5 @@
 use std::io::prelude::*;
-use std::path::Iter;
+use std::str::Split;
 use std::{net::TcpListener, net::TcpStream};
 
 fn main() {
@@ -25,26 +25,35 @@ fn handler(mut stream: TcpStream) {
 
     stream.read(&mut buf).unwrap();
     let request = String::from_utf8_lossy(&buf[..]);
-    println!("Request: {}", request);
-    let mut path = request.split("/");
+    let mut path = request.split("/").into_iter();
 
-    let action = path
-        .next()
-        .expect("you dumb ass :skull: why you sending 0 (zero) bytes");
+    let action = path.next().expect("didn't send action");
 
-    if action == "R" {
-        let resp = "1.02";
-        println!("Read instruction, sending 1.02 back");
-
-        stream.write(resp.as_bytes()).unwrap();
-        stream.flush().unwrap();
-    } else if action == "U" {
-        let resp = "1.02";
-        stream.write(resp.as_bytes()).unwrap();
-        stream.flush().unwrap();
+    match action {
+        "R" => read(path),
+        "U" => update(path),
+        _ => println!("not an action!"),
     }
+    // if action == "R" {
+    //     let resp = "1.02";
+    //     println!("Read instruction, sending 1.02 back");
+    //
+    //     stream.write(resp.as_bytes()).unwrap();
+    //     stream.flush().unwrap();
+    // } else if action == "U" {
+    //     let resp = "1.02";
+    //     stream.write(resp.as_bytes()).unwrap();
+    //     stream.flush().unwrap();
+    // }
 }
 
-fn get(path: Iter) {}
+fn read(path: Split<&str>) {
+    // println!("{}", path.as_str());
+    println!("Read Action");
+    path.for_each(|path| println!("{}", path));
+}
 
-fn update(path: String) {}
+fn update(path: Split<&str>) {
+    println!("Update Action");
+    path.for_each(|path| println!("{}", path));
+}
