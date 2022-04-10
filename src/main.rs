@@ -1,4 +1,5 @@
 use std::io::prelude::*;
+use std::path::Iter;
 use std::{net::TcpListener, net::TcpStream};
 
 fn main() {
@@ -22,11 +23,28 @@ fn init(port: i32) {
 fn handler(mut stream: TcpStream) {
     let mut buf = [0; 256];
 
-    // stream.read(&mut buf).unwrap();
-    // println!("requests: {}", String::from_utf8_lossy(&buf[..]));
+    stream.read(&mut buf).unwrap();
+    let request = String::from_utf8_lossy(&buf[..]);
+    println!("Request: {}", request);
+    let mut path = request.split("/");
 
-    let content = "hello world";
+    let action = path
+        .next()
+        .expect("you dumb ass :skull: why you sending 0 (zero) bytes");
 
-    stream.write(content.as_bytes()).unwrap();
-    stream.flush().unwrap();
+    if action == "R" {
+        let resp = "1.02";
+        println!("Read instruction, sending 1.02 back");
+
+        stream.write(resp.as_bytes()).unwrap();
+        stream.flush().unwrap();
+    } else if action == "U" {
+        let resp = "1.02";
+        stream.write(resp.as_bytes()).unwrap();
+        stream.flush().unwrap();
+    }
 }
+
+fn get(path: Iter) {}
+
+fn update(path: String) {}
