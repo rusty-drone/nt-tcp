@@ -1,4 +1,4 @@
-use std::io::prelude::*;
+use std::io::prelude::Read;
 use std::str::Split;
 use std::{net::TcpListener, net::TcpStream};
 
@@ -34,17 +34,6 @@ fn handler(mut stream: TcpStream) {
         "U" => update(path),
         _ => println!("not an action!"),
     }
-    // if action == "R" {
-    //     let resp = "1.02";
-    //     println!("Read instruction, sending 1.02 back");
-    //
-    //     stream.write(resp.as_bytes()).unwrap();
-    //     stream.flush().unwrap();
-    // } else if action == "U" {
-    //     let resp = "1.02";
-    //     stream.write(resp.as_bytes()).unwrap();
-    //     stream.flush().unwrap();
-    // }
 }
 
 fn read(path: Split<&str>) {
