@@ -31,7 +31,7 @@ fn handler(mut stream: TcpStream) {
 
     match action {
         "R" => read(path),
-        "U" => update(path),
+        "W" => write(path),
         _ => println!("not an action!"),
     }
 }
@@ -42,7 +42,7 @@ fn read(path: Split<&str>) {
     path.for_each(|path| println!("{}", path));
 }
 
-fn update(path: Split<&str>) {
-    println!("Update Action");
+fn write(path: Split<&str>) {
+    println!("Write Action");
     path.for_each(|path| println!("{}", path));
 }
