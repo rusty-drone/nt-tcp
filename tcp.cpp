@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include <sys/types.h>
 #include <unistd.h>
@@ -7,6 +8,13 @@
 #include <string.h>
 #include <string>
 
+int randi(int lo, int hi)
+{
+    int n = hi - lo + 1;
+    int i = rand() % n;
+    if (i < 0) i = -i;
+    return lo + i;
+}
 int create() {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
@@ -29,7 +37,7 @@ int main()
     sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(8080);
-    inet_pton(AF_INET, "localhost", &hint.sin_addr);
+    inet_pton(AF_INET, "192.168.0.18", &hint.sin_addr);
   
  
     int result = bind(sock, (sockaddr*)&hint, sizeof(hint));
@@ -66,7 +74,11 @@ int main()
  
     while (true)
     {
-      std::string s = "Hello from the other side";
+      srand(time(NULL));
+      int radint = randi(0, 10);
+      std::cout << radint << std::endl;
+
+      std::string s = std::to_string(radint);
 
  
         send(clientSocket, s.c_str(), s.size(), 0);
