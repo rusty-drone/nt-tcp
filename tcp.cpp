@@ -37,7 +37,7 @@ int main()
     sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(8080);
-    inet_pton(AF_INET, "192.168.0.18", &hint.sin_addr);
+    inet_pton(AF_INET, "localhost", &hint.sin_addr);
   
  
     int result = bind(sock, (sockaddr*)&hint, sizeof(hint));
@@ -78,7 +78,8 @@ int main()
       int radint = randi(0, 10);
       std::cout << radint << std::endl;
 
-      std::string s = std::to_string(radint);
+      std::string s = "imu_10_10|imu_12_20|imu_13_30|";
+
 
  
         send(clientSocket, s.c_str(), s.size(), 0);
