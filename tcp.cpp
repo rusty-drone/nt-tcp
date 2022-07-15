@@ -17,7 +17,6 @@ int create() {
   return sock;
 }
  
- 
 int main()
 {
     // Create a socket
@@ -30,7 +29,8 @@ int main()
     sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(8080);
-    inet_pton(AF_INET, "0.0.0.0", &hint.sin_addr);
+    inet_pton(AF_INET, "localhost", &hint.sin_addr);
+  
  
     int result = bind(sock, (sockaddr*)&hint, sizeof(hint));
  
@@ -66,31 +66,17 @@ int main()
  
     while (true)
     {
-      //clear out buffer for reuse
-        memset(buf, 0, 4096);
+      std::string s = "Hello from the other side";
+
  
-        // Wait for client to send data
-        int bytesReceived = recv(clientSocket, buf, 4096, 0);
-        if (bytesReceived == -1)
-        {
-            std::cerr << "Error in recv(). Quitting" << std::endl;
-            break;
-        }
- 
-        if (bytesReceived == 0)
-        {
-            std::cout << "Client disconnected " << std::endl;
-            break;
-        }
- 
-        std::cout << std::string(buf, 0, bytesReceived) << std::endl;
- 
-        // Echo message back to client
-        send(clientSocket, buf, bytesReceived + 1, 0);
+        send(clientSocket, s.c_str(), s.size(), 0);
     }
  
     // Close the socket
     close(clientSocket);
  
+ 
+        // Echo message back to client
     return 0;
 }
+
