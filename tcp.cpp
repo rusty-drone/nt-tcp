@@ -38,7 +38,6 @@ int main() {
 
   std::string s = "imu_10_10|gyro_20_20|dick-size_10_300";
   std::cout << "created socket" << std::endl;
-  std::cout << s.length() << std::endl;
   // Bind the ip address and port to a socket
   sockaddr_in hint;
   hint.sin_family = AF_INET;
@@ -85,25 +84,49 @@ int main() {
   float data = 0.0;
   float data2 = 0.0;
   float data3 = 0.0;
+  float data4 = 0.0;
+  float data5 = 0.0;
+  float data6 = 0.0;
+  float data7 = 0.0;
+  float data8 = 0.0;
+  float data9 = 0.0;
+
   Grapher g("imu", &data, micros);
   Grapher g2("gyro", &data2, micros);
-  Grapher g3("dick-size", &data3, micros);
+  Grapher g3("a", &data3, micros);
+  Grapher g4("b", &data4, micros);
+  Grapher g5("c", &data5, micros);
+  Grapher g6("d", &data6, micros);
+  Grapher g7("e", &data7, micros);
+  Grapher g8("f", &data8, micros);
+  Grapher g9("g", &data9, micros);
   std::cout << g.get_parsed_data() << std::endl;
 
   graphers.push_back(g);
-  // graphers.push_back(g2);
-  // graphers.push_back(g3);
+  graphers.push_back(g2);
+  graphers.push_back(g3);
+  graphers.push_back(g4);
+  graphers.push_back(g5);
+  graphers.push_back(g6);
+  graphers.push_back(g7);
+  graphers.push_back(g8);
+  graphers.push_back(g9);
 
   while (true) {
     for (int i = 0; i < graphers.size(); i++) {
-      std::cout << graphers[i].get_parsed_data() << std::endl;
       send(clientSocket, graphers[i].get_parsed_data().c_str(),
            graphers[i].get_parsed_data().size(), 0);
     }
     data += 1;
     data2 -= 1;
     data3 = randi(0, 100);
-    usleep(200 * 1000);
+    data4 = randi(0, 100);
+    data5 = randi(0, 100);
+    data6 = randi(0, 100);
+    data7 = randi(0, 100);
+    data8 = randi(0, 100);
+    data9 = randi(0, 100);
+    usleep(100 * 1000);
   }
 
   // Close the socket

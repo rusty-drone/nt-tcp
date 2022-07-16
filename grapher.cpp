@@ -12,15 +12,14 @@ std::string Grapher::get_parsed_data() {
   std::chrono::milliseconds time =
       duration_cast<milliseconds>(system_clock::now().time_since_epoch());
 
-  long long micros =
-      std::chrono::duration_cast<std::chrono::microseconds>(time).count() -
-      initial_time;
+  long long secs =
+      (std::chrono::duration_cast<std::chrono::microseconds>(time).count() -
+       initial_time) /
+      1000;
 
   std::stringstream ss;
-  ss << micros;
+  ss << secs;
   std::string s = ss.str();
-
-  std::cout << s << std::endl;
 
   std::string out = name + "_" + s + "_" + std::to_string(*value) + "|";
 
