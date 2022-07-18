@@ -10,6 +10,8 @@
 
 #include <chrono>
 #include <vector>
+
+#include <wiringPi.h>
 using namespace std::chrono;
 
 #include "grapher.h"
