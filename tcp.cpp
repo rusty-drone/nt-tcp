@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <netdb.h>
@@ -11,7 +12,8 @@
 #include <chrono>
 #include <vector>
 
-#include <wiringPi.h>
+#include <wiringSerial.h>
+
 using namespace std::chrono;
 
 #include "grapher.h"
@@ -23,6 +25,7 @@ int randi(int lo, int hi) {
     i = -i;
   return lo + i;
 }
+
 int create() {
   int sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock == -1) {
@@ -33,23 +36,21 @@ int create() {
 }
 
 int main() {
-
   std::vector<Grapher> graphers;
   // Create a socket
   int sock = create();
 
-  std::string s = "imu_10_10|gyro_20_20|dick-size_10_300";
-  std::cout << "created socket" << std::endl;
   // Bind the ip address and port to a socket
   sockaddr_in hint;
   hint.sin_family = AF_INET;
   hint.sin_port = htons(8080);
-  inet_pton(AF_INET, "localhost", &hint.sin_addr);
+  inet_pton(AF_INET, "192.168.0.18", &hint.sin_addr);
 
   int result = bind(sock, (sockaddr *)&hint, sizeof(hint));
 
   listen(sock, SOMAXCONN);
 
+  std::cout << "created socket" << std::endl;
   // Wait for a connection
   sockaddr_in client;
   socklen_t clientSize = sizeof(client);
@@ -73,9 +74,6 @@ int main() {
 
   // Close sock socket
   close(sock);
-
-  // While loop: accept and echo message back to client
-  char buf[4096];
 
   std::chrono::milliseconds t =
       duration_cast<milliseconds>(system_clock::now().time_since_epoch());
@@ -114,11 +112,30 @@ int main() {
   graphers.push_back(g8);
   graphers.push_back(g9);
 
+  int serialFD;
+  if ((serialFD = serialOpen("/dev/ttyACM0", 9600)) < 0) {
+    std::cerr << "Unable to Open Serial Device" << std::endl;
+  }
+
   while (true) {
-    for (int i = 0; i < graphers.size(); i++) {
+    /* for (int i = 0; i < graphers.size(); i++) {
       send(clientSocket, graphers[i].get_parsed_data().c_str(),
            graphers[i].get_parsed_data().size(), 0);
+    } */
+
+    int charNumber;
+    std::string serialData = "";
+    if (serialGetchar(serialFD) == 10) {
+    while ((charNumber = serialGetchar(serialFD)) != 13) {
+      char charData = charNumber;
+      serialData.push_back(charData);
     }
+      if ((serialData.rfind("!", 0) == 0) && (serialData.rfind("?") == serialData.size() - 1)) {
+      std::cout << "serial Data: " << serialData << std::endl;
+      }
+    }
+
+
     data += 1;
     data2 -= 1;
     data3 = randi(0, 100);
@@ -128,7 +145,7 @@ int main() {
     data7 = randi(0, 100);
     data8 = randi(0, 100);
     data9 = randi(0, 100);
-    usleep(100 * 1000);
+     usleep(100 * 1000); 
   }
 
   // Close the socket
