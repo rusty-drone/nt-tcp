@@ -111,6 +111,7 @@ int main() {
   graphers.push_back(g7);
   graphers.push_back(g8);
   graphers.push_back(g9);
+  
 
   int serialFD;
   if ((serialFD = serialOpen("/dev/ttyACM0", 9600)) < 0) {
