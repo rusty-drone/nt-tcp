@@ -1,13 +1,10 @@
 #include <arpa/inet.h>
-#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <netdb.h>
 #include <string.h>
 #include <string>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <type_traits>
 #include <unistd.h>
 
 #include <chrono>
@@ -86,7 +83,6 @@ int main() {
   float data2 = 0.0;
   float data3 = 0.0;
 
-
   Grapher g("imu", &data, micros);
   Grapher g2("gyro", &data2, micros);
   Grapher g3("a", &data3, micros);
@@ -96,7 +92,6 @@ int main() {
   graphers.push_back(g);
   graphers.push_back(g2);
   graphers.push_back(g3);
-
 
   int serialFD;
   if ((serialFD = serialOpen("/dev/ttyACM0", 115200)) < 0) {
@@ -122,14 +117,6 @@ int main() {
     }
 
     data2 = serialValue;
-/*
-    for (int i = 0; graphers.size(); i++) {
-      if (graphers[i].name == serialName) {
-
-        data2 = serialValue;
-      }
-    }
-*/
 
     for (auto & grapher : graphers) {
       send(clientSocket, grapher.get_parsed_data().c_str(),
