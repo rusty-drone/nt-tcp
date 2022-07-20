@@ -7,6 +7,7 @@
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <type_traits>
 #include <unistd.h>
 
 #include <chrono>
@@ -44,7 +45,7 @@ int main() {
   sockaddr_in hint;
   hint.sin_family = AF_INET;
   hint.sin_port = htons(8080);
-  inet_pton(AF_INET, "192.168.0.18", &hint.sin_addr);
+  inet_pton(AF_INET, "localhost", &hint.sin_addr);
 
   int result = bind(sock, (sockaddr *)&hint, sizeof(hint));
 
@@ -111,42 +112,55 @@ int main() {
   graphers.push_back(g7);
   graphers.push_back(g8);
   graphers.push_back(g9);
-  
 
   int serialFD;
-  if ((serialFD = serialOpen("/dev/ttyACM0", 9600)) < 0) {
+  if ((serialFD = serialOpen("/dev/ttyACM0", 500000)) < 0) {
     std::cerr << "Unable to Open Serial Device" << std::endl;
   }
 
   while (true) {
-    /* for (int i = 0; i < graphers.size(); i++) {
-      send(clientSocket, graphers[i].get_parsed_data().c_str(),
-           graphers[i].get_parsed_data().size(), 0);
-    } */
 
     int charNumber;
+    std::string serialName;
+    float serialValue;
     std::string serialData = "";
-    if (serialGetchar(serialFD) == 10) {
-    while ((charNumber = serialGetchar(serialFD)) != 13) {
-      char charData = charNumber;
-      serialData.push_back(charData);
+    if (serialGetchar(serialFD) == 60) {
+      while ((charNumber = serialGetchar(serialFD)) != 62) {
+        char charData = charNumber;
+        serialData.push_back(charData);
+      }
+      // if ((serialData.rfind("!", 0) == 0) && (serialData.rfind("?") ==
+      // serialData.size() - 1)) {
+      // std::cout << "serial Data: " << serialData << std::endl;
+      int delim = serialData.find(":");
+      serialName = serialData.substr(0, delim);
+      serialValue =
+          std::stof(serialData.substr(delim + 1, serialData.size() - 1));
+
+      std::cout << serialName << "\t\t\t" << serialValue << std::endl;
+      // }
     }
-      if ((serialData.rfind("!", 0) == 0) && (serialData.rfind("?") == serialData.size() - 1)) {
-      std::cout << "serial Data: " << serialData << std::endl;
+    for (int i = 0; graphers.size(); i++) {
+      if (graphers[i].name == serialName) {
+
+        data2 = serialValue;
       }
     }
 
+    for (int i = 0; i < graphers.size(); i++) {
+      send(clientSocket, graphers[i].get_parsed_data().c_str(),
+           graphers[i].get_parsed_data().size(), 0);
+    }
 
     data += 1;
-    data2 -= 1;
-    data3 = randi(0, 100);
+    data3 -= 1;
     data4 = randi(0, 100);
     data5 = randi(0, 100);
     data6 = randi(0, 100);
     data7 = randi(0, 100);
     data8 = randi(0, 100);
     data9 = randi(0, 100);
-     usleep(100 * 1000); 
+    usleep(100 * 1000);
   }
 
   // Close the socket
