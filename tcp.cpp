@@ -82,16 +82,19 @@ int main() {
   float data = 0.0;
   float data2 = 0.0;
   float data3 = 0.0;
+  float data4 = 0.0;
 
   Grapher g("imu", &data, micros);
   Grapher g2("gyro", &data2, micros);
   Grapher g3("a", &data3, micros);
+  Grapher g4("accelerometer", &data4, micros);
 
   std::cout << g.get_parsed_data() << std::endl;
 
   graphers.push_back(g);
   graphers.push_back(g2);
   graphers.push_back(g3);
+  graphers.push_back(g4);
 
   int serialFD;
   if ((serialFD = serialOpen("/dev/ttyACM0", 115200)) < 0) {
@@ -108,7 +111,6 @@ int main() {
         char charData = charNumber;
         serialData.push_back(charData);
       }
-       std::cout << "serial Data: " << serialData << std::endl;
       int delim = serialData.find(':');
       serialName = serialData.substr(0, delim);
       serialValue =
@@ -116,7 +118,11 @@ int main() {
       std::cout << serialName << "\t" << serialValue << std::endl;
     }
 
-    data2 = serialValue;
+    for (auto & grapher : graphers) {
+      if (grapher.name == serialName) {
+        *grapher.value = serialValue;
+      }
+    }
 
     for (auto & grapher : graphers) {
       send(clientSocket, grapher.get_parsed_data().c_str(),
