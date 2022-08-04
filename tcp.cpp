@@ -1,8 +1,7 @@
 #include <arpa/inet.h>
-#include <cstdlib>
 #include <iostream>
 #include <netdb.h>
-#include <string.h>
+#include <cstring>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -12,131 +11,133 @@
 
 #include <wiringSerial.h>
 
-using namespace std::chrono;
-
 #include "grapher.h"
 
-int randi(int lo, int hi) {
-  int n = hi - lo + 1;
-  int i = rand() % n;
-  if (i < 0)
-    i = -i;
-  return lo + i;
-}
+using namespace std::chrono;
+
+const int PORT = 8080;
+const char IP_ADDRESS[] = "localhost";
+
+struct ParsedSerialData {
+    std::string name;
+    float value{};
+};
 
 int create() {
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock == -1) {
-    std::cerr << "Can't create a socket! Quitting" << std::endl;
-    return -1;
-  }
-  return sock;
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
+        std::cerr << "Can't create a socket! Quitting" << std::endl;
+        return -1;
+    }
+    return sock;
+}
+
+ParsedSerialData
+parse_serial_data(int serialFD) {
+    int charNumber;
+    std::string serialData;
+    if (serialGetchar(serialFD) == 60) {
+        while ((charNumber = serialGetchar(serialFD)) != 62) {
+            char charData = charNumber;
+            serialData.push_back(charData);
+        }
+        int delim = serialData.find(':');
+        ParsedSerialData data;
+        data.name = serialData.substr(0, delim);
+        data.value = std::stof(serialData.substr(delim + 1, serialData.size() - 1));
+        return data;
+    }
 }
 
 int main() {
-  std::vector<Grapher> graphers;
-  // Create a socket
-  int sock = create();
+    std::vector<Grapher> graphers;
 
-  // Bind the ip address and port to a socket
-  sockaddr_in hint{};
-  hint.sin_family = AF_INET;
-  hint.sin_port = htons(8080);
-  inet_pton(AF_INET, "localhost", &hint.sin_addr);
+    int sock = create();
 
-  int result = bind(sock, (sockaddr *)&hint, sizeof(hint));
+    sockaddr_in hint{};
+    hint.sin_family = AF_INET;
+    hint.sin_port = htons(PORT);
+    inet_pton(AF_INET, IP_ADDRESS, &hint.sin_addr);
 
-  listen(sock, SOMAXCONN);
-
-  std::cout << "created socket" << std::endl;
-  // Wait for a connection
-  sockaddr_in client{};
-  socklen_t clientSize = sizeof(client);
-
-  int clientSocket = accept(sock, (sockaddr *)&client, &clientSize);
-
-  char host[NI_MAXHOST];    // Client's remote name
-  char service[NI_MAXSERV]; // Service (i.e. port) the client is connected on
-
-  memset(host, 0, NI_MAXHOST);
-  memset(service, 0, NI_MAXSERV);
-
-  if (getnameinfo((sockaddr *)&client, sizeof(client), host, NI_MAXHOST,
-                  service, NI_MAXSERV, 0) == 0) {
-    std::cout << host << " connected on port " << service << std::endl;
-  } else {
-    inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
-    std::cout << host << " connected on port " << ntohs(client.sin_port)
-              << std::endl;
-  }
-
-  // Close sock socket
-  close(sock);
-
-  std::chrono::milliseconds t =
-      duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-
-  long long micros =
-      std::chrono::duration_cast<std::chrono::microseconds>(t).count();
-
-  float data = 0.0;
-  float data2 = 0.0;
-  float data3 = 0.0;
-  float data4 = 0.0;
-
-  Grapher g("imu", &data, micros);
-  Grapher g2("gyro", &data2, micros);
-  Grapher g3("a", &data3, micros);
-  Grapher g4("accelerometer", &data4, micros);
-
-  std::cout << g.get_parsed_data() << std::endl;
-
-  graphers.push_back(g);
-  graphers.push_back(g2);
-  graphers.push_back(g3);
-  graphers.push_back(g4);
-
-  int serialFD;
-  if ((serialFD = serialOpen("/dev/ttyACM0", 115200)) < 0) {
-    std::cerr << "Unable to Open Serial Device" << std::endl;
-  }
-
-  while (true) {
-    int charNumber;
-    std::string serialName;
-    float serialValue;
-    std::string serialData;
-    if (serialGetchar(serialFD) == 60) {
-      while ((charNumber = serialGetchar(serialFD)) != 62) {
-        char charData = charNumber;
-        serialData.push_back(charData);
-      }
-      int delim = serialData.find(':');
-      serialName = serialData.substr(0, delim);
-      serialValue =
-          std::stof(serialData.substr(delim + 1, serialData.size() - 1));
-      std::cout << serialName << "\t" << serialValue << std::endl;
+    if (bind(sock, (sockaddr *) &hint, sizeof(hint)) != 0) {
+        std::cerr << "Can't bind socket to port: " << hint.sin_port << std::endl;
+        return 1;
     }
 
-    for (auto & grapher : graphers) {
-      if (grapher.name == serialName) {
-        *grapher.value = serialValue;
-      }
+    if (listen(sock, SOMAXCONN) == -1) {
+        std::cerr << "Can't listen in socket" << std::endl;
+        return 1;
     }
 
-    for (auto & grapher : graphers) {
-      send(clientSocket, grapher.get_parsed_data().c_str(),
-           grapher.get_parsed_data().size(), 0);
+    listen(sock, SOMAXCONN);
+    std::cout << "listening on " << IP_ADDRESS << ": " << PORT << std::endl;
+    sockaddr_in client{};
+    socklen_t clientSize = sizeof(client);
+
+    int clientSocket = accept(sock, (sockaddr *) &client, &clientSize);
+
+    char host[NI_MAXHOST];    // Client's remote name
+    char service[NI_MAXSERV]; // Service (i.e. port) the client is connected on
+
+    memset(host, 0, NI_MAXHOST);
+    memset(service, 0, NI_MAXSERV);
+
+    if (getnameinfo((sockaddr *) &client, sizeof(client), host, NI_MAXHOST,
+                    service, NI_MAXSERV, 0) == 0) {
+        std::cout << host << " connected on port " << service << std::endl;
+    } else {
+        inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
+        std::cout << host << " connected on port " << ntohs(client.sin_port)
+                  << std::endl;
     }
 
-    data += 1;
-    data3 -= 1;
-    usleep(100 * 1000);
-  }
+    // Close sock socket
+    close(sock);
 
-  // Close the socket
-  close(clientSocket);
+    std::chrono::milliseconds t =
+            duration_cast<milliseconds>(system_clock::now().time_since_epoch());
 
-  // Echo message back to client
-  return 0;
+    long long micros =
+            std::chrono::duration_cast<std::chrono::microseconds>(t).count();
+
+    float data = 0.0;
+    float data2 = 0.0;
+    float data3 = 0.0;
+    float data4 = 0.0;
+
+    Grapher g("imu", &data, micros);
+    Grapher g2("gyro", &data2, micros);
+    Grapher g3("a", &data3, micros);
+    Grapher g4("accelerometer", &data4, micros);
+
+    std::cout << g.get_parsed_data() << std::endl;
+
+    graphers.push_back(g);
+    graphers.push_back(g2);
+    graphers.push_back(g3);
+    graphers.push_back(g4);
+
+    int serialFD;
+    if ((serialFD = serialOpen("/dev/ttyACM0", 115200)) < 0) {
+        std::cerr << "Unable to Open Serial Device" << std::endl;
+    }
+
+    while (true) {
+        ParsedSerialData serialData = parse_serial_data(serialFD);
+
+        for (auto &grapher: graphers) {
+            if (grapher.name == serialData.name) {
+                *grapher.value = serialData.value;
+            }
+        }
+
+        for (auto &grapher: graphers) {
+            send(clientSocket, grapher.get_parsed_data().c_str(),
+                 grapher.get_parsed_data().size(), 0);
+        }
+
+        data += 1;
+        data3 -= 1;
+        usleep(100 * 1000);
+    }
 }

@@ -11,7 +11,6 @@ public:
   Grapher(std::string name, float *value, long long initial_time);
   std::string get_parsed_data();
 
-public:
   float *value;
   std::string name;
   long long initial_time;
